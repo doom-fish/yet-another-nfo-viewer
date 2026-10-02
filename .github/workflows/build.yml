@@ -34,44 +34,22 @@ jobs:
           ONLY_ACTIVE_ARCH=NO \
           clean build
 
-    - name: Verify Universal binary
+    - name: Verify arm64 binaries
       run: |
-        BIN="build/Build/Products/Release/YaNVi.app/Contents/MacOS/YaNVi"
-        echo "Main binary info:"
-        ARCHS=$(lipo -info "$BIN")
-        echo "$ARCHS"
-        if [[ "$ARCHS" != *"x86_64"* ]] || [[ "$ARCHS" != *"arm64"* ]]; then
-            echo "ERROR: Application binary is not universal (x86_64 + arm64 required)"
+        APP="build/Build/Products/Release/YaNVi.app"
+        for BIN in \
+          "$APP/Contents/MacOS/YaNVi" \
+          "$APP/Contents/PlugIns/YaNViQuickLook.appex/Contents/MacOS/YaNViQuickLook" \
+          "$APP/Contents/PlugIns/YaNViThumbnails.appex/Contents/MacOS/YaNViThumbnails"
+        do
+          ARCHS=$(lipo -archs "$BIN")
+          echo "$BIN: $ARCHS"
+          if [[ "$ARCHS" != "arm64" ]]; then
+            echo "ERROR: $BIN must be arm64 only"
             exit 1
-        fi
-        echo "Application Mach-O details verified:"
-        file "$BIN"
-
-    - name: Verify QuickLook extension
-      run: |
-        QL_BIN="build/Build/Products/Release/YaNVi.app/Contents/PlugIns/YaNViQuickLook.appex/Contents/MacOS/YaNViQuickLook"
-        echo "QuickLook binary info:"
-        ARCHS=$(lipo -info "$QL_BIN")
-        echo "$ARCHS"
-        if [[ "$ARCHS" != *"x86_64"* ]] || [[ "$ARCHS" != *"arm64"* ]]; then
-            echo "ERROR: QuickLook binary is not universal (x86_64 + arm64 required)"
-            exit 1
-        fi
-        echo "QuickLook Mach-O details verified:"
-        file "$QL_BIN"
-
-    - name: Verify Thumbnails extension
-      run: |
-        TH_BIN="build/Build/Products/Release/YaNVi.app/Contents/PlugIns/YaNViThumbnails.appex/Contents/MacOS/YaNViThumbnails"
-        echo -e "Thumbnails binary info:"
-        ARCHS=$(lipo -info "$TH_BIN")
-        echo "$ARCHS"
-        if [[ "$ARCHS" != *"x86_64"* ]] || [[ "$ARCHS" != *"arm64"* ]]; then
-          echo "ERROR: Thumbnails binary is not universal (x86_64 + arm64 required)"
-          exit 1
-        fi
-        echo "Thumbnails Mach-O details verified:"
-        file "$TH_BIN"
+          fi
+          file "$BIN"
+        done
 
     - name: Prepare artifacts
       run: |
@@ -89,13 +67,13 @@ jobs:
 
     - name: Create DMG
       run: |
-        DMG_NAME="YaNVi-${VERSION}-universal.dmg"
+        DMG_NAME="YaNVi-${VERSION}-arm64.dmg"
         echo "Creating DMG: $DMG_NAME"
         mkdir dmg
         cp -R build_artifacts/YaNVi.app dmg/
         ln -s /Applications dmg/Applications
         hdiutil create \
-          -volname "YaNVi (U2B)" \
+          -volname "YaNVi" \
           -srcfolder dmg \
           -ov -format UDZO \
           "build_artifacts/$DMG_NAME"

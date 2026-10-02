@@ -60,7 +60,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
     }
 
 
-    func preparePreviewOfFile(at url: URL) async throws {
+    func preparePreviewOfFile(at url: URL, completionHandler handler: @escaping (Error?) -> Void) {
 
         print("\nQuickLook extension loaded for:", url.lastPathComponent)
 
@@ -83,17 +83,24 @@ class PreviewViewController: NSViewController, QLPreviewingController {
            let fileSize = attributes[.size] as? UInt64 {
             if fileSize > 2_097_152 {
                 // Exiting process should display a generic "Preview not available" by macOS
-                throw QLError(message: "File is too large to preview.")
+                handler(QLError(message: "File is too large to preview."))
+                return
             }
         }
 
-        let art = try TextArt.load(from: url)
+        let art: TextArt
+        do {
+            art = try TextArt.load(from: url)
+        } catch {
+            handler(error)
+            return
+        }
         let finalLineCount = art.lines.count
         let longestLine = art.columns
 
         print("NFO count: \(finalLineCount) lines @ maximum \(longestLine) chars")
 
-        await MainActor.run {
+        DispatchQueue.main.async { [self] in
 
             // Reset layout from previous preview
             textView.string = ""
@@ -137,6 +144,8 @@ class PreviewViewController: NSViewController, QLPreviewingController {
                 width: textWidth + SharedCode.nfoMargin,
                 height: textHeight
             )
+
+            handler(nil)
         }
     }
 }
