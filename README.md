@@ -1,5 +1,7 @@
 # Yet Another NFO Viewer (YaNVi)
 
+> **doom-fish fork** of [mackonsti/yet-another-nfo-viewer](https://github.com/mackonsti/yet-another-nfo-viewer), modified since October 2026. It adds ANSI (`.ans`) and XBin (`.xb`) art, `.asci` and `.txt` files, dark mode, zoom (pinch, ⌘=, ⌘-, ⌘0, ⌘9) and drag-to-pan, and fixes long files being cut off. The rest of this README is the upstream author's.
+
 [![Build](https://img.shields.io/github/actions/workflow/status/mackonsti/yet-another-nfo-viewer/build.yml?branch=main&label=Build)](https://github.com/mackonsti/yet-another-nfo-viewer/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/mackonsti/yet-another-nfo-viewer?label=Latest%20Release)](https://github.com/mackonsti/yet-another-nfo-viewer/releases/latest)
 [![License](https://img.shields.io/github/license/mackonsti/yet-another-nfo-viewer?label=License)](https://github.com/mackonsti/yet-another-nfo-viewer/blob/main/LICENSE)
