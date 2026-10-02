@@ -51,6 +51,12 @@ class ThumbnailProvider: QLThumbnailProvider {
         // we use the context-based initializer to draw our text content manually
         let reply = QLThumbnailReply(contextSize: size) { context in
 
+            let pixelsPerPoint = max(CGFloat(context.width) / size.width, 1)
+            let userScale = abs(context.ctm.a)
+            if pixelsPerPoint > userScale * 1.01 {
+                context.scaleBy(x: pixelsPerPoint / userScale, y: pixelsPerPoint / userScale)
+            }
+
             // Define drawing rectangle (use ~99% of width and height)
             let insetX = size.width * 0.005
             let insetY = size.height * 0.005
@@ -78,6 +84,16 @@ class ThumbnailProvider: QLThumbnailProvider {
 
             context.setFillColor(page)
             context.fill(CGRect(origin: .zero, size: size))
+
+            if let bitmap = art.bitmap {
+                guard let image = bitmap.scaledImage(width: Int(drawRect.width * pixelsPerPoint), maximumHeight: Int(drawRect.height * pixelsPerPoint)) else {
+                    return false
+                }
+                let imageHeight = CGFloat(image.height) / pixelsPerPoint
+                context.interpolationQuality = .none
+                context.draw(image, in: CGRect(x: drawRect.minX, y: drawRect.maxY - imageHeight, width: CGFloat(image.width) / pixelsPerPoint, height: imageHeight))
+                return true
+            }
 
             let baseFont = CTFontCreateWithName(SharedCode.nfoFontName as CFString, SharedCode.nfoFontSize, nil)
             let charWidth = SharedCode.nfoCellWidth

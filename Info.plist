@@ -16,6 +16,7 @@
 				<string>diz</string>
 				<string>ans</string>
 				<string>asci</string>
+				<string>xb</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string>NFO Document</string>
@@ -86,6 +87,7 @@
 					<string>diz</string>
 					<string>ans</string>
 					<string>asci</string>
+					<string>xb</string>
 				</array>
 			</dict>
 		</dict>

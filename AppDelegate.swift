@@ -69,7 +69,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         printInfo.orientation = .portrait
 
         // Set the available printing options
-        let operation = NSPrintOperation(view: nfoTextView, printInfo: printInfo)
+        guard let printView = nfoScrollView.documentView else { return }
+        let operation = NSPrintOperation(view: printView, printInfo: printInfo)
         operation.printPanel.options = [
             .showsCopies,
             .showsPageRange,
@@ -78,15 +79,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .showsScaling,
             .showsPreview
         ]
-        nfoTextView.appearance = NSAppearance(named: .aqua)
+        printView.appearance = NSAppearance(named: .aqua)
         operation.run()
-        nfoTextView.appearance = nil
+        printView.appearance = nil
     }
 
     // Bundled font defined in SharedCode.swift
 
     // Track whether the app was launched by opening a file
     var hasDroppedFile = false
+
+    var nfoScrollView: NSScrollView!
 
     // Window padding constants (same values as original project)
     let horizontalWindowPadding: CGFloat = 20
@@ -273,11 +276,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         nfoTextView.drawsBackground = true
         nfoTextView.backgroundColor = art.background ?? .textBackgroundColor
+        nfoScrollView.backgroundColor = art.background ?? .textBackgroundColor
+        nfoScrollView.documentView = art.bitmap.map(BitmapArtView.init(art:)) ?? nfoTextView
 
         nfoWindow.title = url.lastPathComponent
 
         // Calculate window size required for the ASCII art
-        sizeForWindowDrawing(longestLine: longestLine, numberOfLines: finalLineCount, font: nfoFont)
+        sizeForWindowDrawing(art: art, font: nfoFont)
 
         // Window configuration
         // if !nfoWindow.isVisible { nfoWindow.center() }
@@ -304,7 +309,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
      rendered text via NSLayoutManager.
      */
 
-    func sizeForWindowDrawing(longestLine: Int, numberOfLines: Int, font: NSFont) {
+    func sizeForWindowDrawing(art: TextArt, font: NSFont) {
 
         // Avoid a theoretical crash if macOS reports no main screen
         guard let visibleScreen = NSScreen.main?.visibleFrame else { return }
@@ -319,11 +324,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             lineHeight = ceil(font.ascender + abs(font.descender) + font.leading)
         }
 
-        // Monospaced glyph width
-        let glyphWidth = SharedCode.nfoCellWidth
-
-        let textWidth = CGFloat(longestLine) * glyphWidth
-        let textHeight = CGFloat(numberOfLines) * lineHeight
+        let contentSize = art.contentSize(lineHeight: lineHeight)
+        let textWidth = contentSize.width
+        let textHeight = contentSize.height
 
         print("View metrics: \(textWidth) x \(textHeight) pixels")
 
@@ -343,6 +346,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Screen limits scenarios
         if windowWidth > visibleScreen.width {
             windowWidth = visibleScreen.width - horizontalWindowPadding
+        }
+
+        nfoScrollView.hasHorizontalScroller = textWidth > windowWidth
+        if nfoScrollView.hasHorizontalScroller {
+            windowHeight += NSScroller.scrollerWidth(for: .regular, scrollerStyle: NSScroller.preferredScrollerStyle)
         }
 
         if windowHeight > visibleScreen.height {
@@ -376,6 +384,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hasDroppedFile = false
         SharedCode.registerFonts()
         nfoTextView.textContainer?.replaceLayoutManager(TextArtLayoutManager())
+        nfoScrollView = nfoTextView.enclosingScrollView
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

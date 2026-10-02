@@ -13,6 +13,8 @@ class PreviewViewController: NSViewController, QLPreviewingController {
 
     @IBOutlet var textView: NSTextView!
 
+    private var scrollView: NSScrollView?
+
     // Bundled font defined in SharedCode.swift
 
     override var acceptsFirstResponder: Bool {
@@ -23,6 +25,9 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         super.viewDidLoad()
 
         textView.textContainer?.replaceLayoutManager(TextArtLayoutManager())
+        scrollView = textView.enclosingScrollView
+        scrollView?.hasHorizontalScroller = true
+        scrollView?.drawsBackground = true
 
         // Set the view properties
         textView.isEditable = false
@@ -98,6 +103,8 @@ class PreviewViewController: NSViewController, QLPreviewingController {
             textView.font = nfoFont
             textView.textStorage?.setAttributedString(art.attributedString(font: nfoFont))
             textView.backgroundColor = art.background ?? .textBackgroundColor
+            scrollView?.backgroundColor = art.background ?? .textBackgroundColor
+            scrollView?.documentView = art.bitmap.map(BitmapArtView.init(art:)) ?? textView
 
             // Find true line height used by AppKit
             let lineHeight: CGFloat
@@ -108,12 +115,10 @@ class PreviewViewController: NSViewController, QLPreviewingController {
                 lineHeight = ceil(nfoFont.ascender + abs(nfoFont.descender) + nfoFont.leading)
             }
 
-            // Monospaced glyph width
-            let glyphWidth = SharedCode.nfoCellWidth
-
             // Calculate ASCII art size
-            let textWidth = CGFloat(longestLine) * glyphWidth
-            let textHeight = CGFloat(finalLineCount) * lineHeight
+            let contentSize = art.contentSize(lineHeight: lineHeight)
+            let textWidth = contentSize.width
+            let textHeight = contentSize.height
 
             print("View metrics: \(textWidth) x \(textHeight) pixels")
 
