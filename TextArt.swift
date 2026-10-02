@@ -516,10 +516,19 @@ final class TextArtLayoutManager: NSLayoutManager {
     override func showCGGlyphs(_ glyphs: UnsafePointer<CGGlyph>, positions: UnsafePointer<CGPoint>, count glyphCount: Int, font: NSFont, textMatrix: CGAffineTransform, attributes: [NSAttributedString.Key: Any] = [:], in context: CGContext) {
         for index in 0..<glyphCount {
             context.saveGState()
+            context.setShouldAntialias(false)
             context.clip(to: CGRect(x: positions[index].x, y: positions[index].y - font.pointSize * 2, width: SharedCode.nfoCellWidth, height: font.pointSize * 4))
             super.showCGGlyphs(glyphs + index, positions: positions + index, count: 1, font: font, textMatrix: textMatrix, attributes: attributes, in: context)
             context.restoreGState()
         }
+    }
+
+    override func fillBackgroundRectArray(_ rectArray: UnsafePointer<NSRect>, count rectCount: Int, forCharacterRange charRange: NSRange, color: NSColor) {
+        let context = NSGraphicsContext.current?.cgContext
+        context?.saveGState()
+        context?.setShouldAntialias(false)
+        super.fillBackgroundRectArray(rectArray, count: rectCount, forCharacterRange: charRange, color: color)
+        context?.restoreGState()
     }
 }
 
@@ -549,10 +558,78 @@ final class BitmapArtView: NSView {
               let image = art.image(columns: firstColumn..<lastColumn, rows: firstRow..<lastRow) else { return }
 
         context.saveGState()
+        context.setShouldAntialias(false)
         context.interpolationQuality = .none
         context.translateBy(x: CGFloat(firstColumn * 8), y: CGFloat(lastRow * art.glyphHeight))
         context.scaleBy(x: 1, y: -1)
         context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
         context.restoreGState()
+    }
+
+    private var dragLocation: NSPoint?
+
+    override func resetCursorRects() {
+        addCursorRect(visibleRect, cursor: .openHand)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        dragLocation = event.locationInWindow
+        NSCursor.closedHand.push()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let start = dragLocation else { return }
+        enclosingScrollView?.pan(from: start, to: event.locationInWindow)
+        dragLocation = event.locationInWindow
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard dragLocation != nil else { return }
+        dragLocation = nil
+        NSCursor.pop()
+    }
+}
+
+final class ArtTextView: NSTextView {
+
+    private var dragLocation: NSPoint?
+
+    override func mouseDown(with event: NSEvent) {
+        guard event.clickCount == 1, event.modifierFlags.isDisjoint(with: [.shift, .option, .command, .control]) else {
+            super.mouseDown(with: event)
+            return
+        }
+        setSelectedRange(NSRange(location: 0, length: 0))
+        dragLocation = event.locationInWindow
+        NSCursor.closedHand.push()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let start = dragLocation else {
+            super.mouseDragged(with: event)
+            return
+        }
+        enclosingScrollView?.pan(from: start, to: event.locationInWindow)
+        dragLocation = event.locationInWindow
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard dragLocation != nil else {
+            super.mouseUp(with: event)
+            return
+        }
+        dragLocation = nil
+        NSCursor.pop()
+    }
+}
+
+extension NSScrollView {
+
+    func pan(from start: NSPoint, to end: NSPoint) {
+        var origin = contentView.bounds.origin
+        origin.x -= (end.x - start.x) / magnification
+        origin.y += (contentView.isFlipped ? end.y - start.y : start.y - end.y) / magnification
+        contentView.scroll(to: contentView.constrainBoundsRect(NSRect(origin: origin, size: contentView.bounds.size)).origin)
+        reflectScrolledClipView(contentView)
     }
 }

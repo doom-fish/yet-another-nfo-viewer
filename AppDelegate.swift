@@ -47,6 +47,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         openNFOFile()
     }
 
+    @IBAction func zoomIn(_ sender: Any?) {
+        zoom(to: pow(2, floor(log2(nfoScrollView.magnification) + 0.01) + 1))
+    }
+
+    @IBAction func zoomOut(_ sender: Any?) {
+        zoom(to: pow(2, ceil(log2(nfoScrollView.magnification) - 0.01) - 1))
+    }
+
+    @IBAction func zoomToActualSize(_ sender: Any?) {
+        zoom(to: 1)
+    }
+
+    @IBAction func zoomToFit(_ sender: Any?) {
+        guard let documentView = nfoScrollView.documentView else { return }
+        nfoScrollView.magnify(toFit: documentView.bounds)
+    }
+
+    private func zoom(to magnification: CGFloat) {
+        let visible = nfoScrollView.documentVisibleRect
+        nfoScrollView.setMagnification(magnification, centeredAt: NSPoint(x: visible.midX, y: visible.midY))
+    }
+
     @IBAction func printDocument(_ sender: Any?) {
         print("Menu Print selected")
 
@@ -278,6 +300,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         nfoTextView.backgroundColor = art.background ?? .textBackgroundColor
         nfoScrollView.backgroundColor = art.background ?? .textBackgroundColor
         nfoScrollView.documentView = art.bitmap.map(BitmapArtView.init(art:)) ?? nfoTextView
+        nfoScrollView.magnification = 1
 
         nfoWindow.title = url.lastPathComponent
 
@@ -348,8 +371,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             windowWidth = visibleScreen.width - horizontalWindowPadding
         }
 
-        nfoScrollView.hasHorizontalScroller = textWidth > windowWidth
-        if nfoScrollView.hasHorizontalScroller {
+        if textWidth > windowWidth {
             windowHeight += NSScroller.scrollerWidth(for: .regular, scrollerStyle: NSScroller.preferredScrollerStyle)
         }
 
@@ -385,6 +407,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         SharedCode.registerFonts()
         nfoTextView.textContainer?.replaceLayoutManager(TextArtLayoutManager())
         nfoScrollView = nfoTextView.enclosingScrollView
+        nfoScrollView.hasHorizontalScroller = true
+        nfoScrollView.allowsMagnification = true
+        nfoScrollView.minMagnification = 0.01
+        nfoScrollView.maxMagnification = 16
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

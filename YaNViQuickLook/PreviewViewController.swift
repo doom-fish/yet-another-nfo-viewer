@@ -28,6 +28,9 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         scrollView = textView.enclosingScrollView
         scrollView?.hasHorizontalScroller = true
         scrollView?.drawsBackground = true
+        scrollView?.allowsMagnification = true
+        scrollView?.minMagnification = 0.01
+        scrollView?.maxMagnification = 16
 
         // Set the view properties
         textView.isEditable = false
@@ -105,6 +108,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
             textView.backgroundColor = art.background ?? .textBackgroundColor
             scrollView?.backgroundColor = art.background ?? .textBackgroundColor
             scrollView?.documentView = art.bitmap.map(BitmapArtView.init(art:)) ?? textView
+            scrollView?.magnification = 1
 
             // Find true line height used by AppKit
             let lineHeight: CGFloat

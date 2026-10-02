@@ -33,7 +33,7 @@
                             <rect key="frame" x="0.0" y="0.0" width="195" height="208"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView editable="NO" drawsBackground="NO" importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" allowsCharacterPickerTouchBarItem="NO" textCompletion="NO" id="542">
+                                <textView editable="NO" drawsBackground="NO" importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" allowsCharacterPickerTouchBarItem="NO" textCompletion="NO" id="542" customClass="ArtTextView" customModule="YaNVi" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="195" height="208"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -195,6 +195,32 @@
                                         </menuItem>
                                     </items>
                                 </menu>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="View" id="vWm-Mn-001">
+                    <menu key="submenu" title="View" id="vWm-Mn-002">
+                        <items>
+                            <menuItem title="Actual Size" keyEquivalent="0" id="vWm-Mn-003">
+                                <connections>
+                                    <action selector="zoomToActualSize:" target="494" id="vWm-Mn-004"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Zoom to Fit" keyEquivalent="9" id="vWm-Mn-005">
+                                <connections>
+                                    <action selector="zoomToFit:" target="494" id="vWm-Mn-006"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Zoom In" keyEquivalent="=" id="vWm-Mn-007">
+                                <connections>
+                                    <action selector="zoomIn:" target="494" id="vWm-Mn-008"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Zoom Out" keyEquivalent="-" id="vWm-Mn-009">
+                                <connections>
+                                    <action selector="zoomOut:" target="494" id="vWm-Mn-010"/>
+                                </connections>
                             </menuItem>
                         </items>
                     </menu>
