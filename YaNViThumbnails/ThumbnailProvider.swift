@@ -51,10 +51,6 @@ class ThumbnailProvider: QLThumbnailProvider {
         // we use the context-based initializer to draw our text content manually
         let reply = QLThumbnailReply(contextSize: size) { context in
 
-            // Fill background with paper white (base icon canvas)
-            context.setFillColor(NSColor.white.cgColor)
-            context.fill(CGRect(origin: .zero, size: size))
-
             // Define drawing rectangle (use ~99% of width and height)
             let insetX = size.width * 0.005
             let insetY = size.height * 0.005
@@ -69,90 +65,69 @@ class ThumbnailProvider: QLThumbnailProvider {
                 }
             }
 
-            // Read NFO file contents using CP437 encoding
-            let text: String
-            do {
-                text = try String(contentsOf: request.fileURL, encoding: SharedCode.nfoEncoding())
-            } catch {
-                return false  // Return false so QuickLook falls back to the default file icon
+            guard let art = try? TextArt.load(from: request.fileURL, maximumLines: 500), art.columns > 0 else {
+                return false
             }
 
-            var lines = [String]()
-            var maxLineLength = 1  // Use 1 to prevent divide-by-zero crashes on empty files
-
-            // Single-pass enumeration to normalize line endings and trim spaces (no Regex overhead)
-            text.enumerateLines { line, stop in
-
-                // Natively replace all tabs with 4 spaces before trimming
-                // var trimmed = line.replacingOccurrences(of: "\t", with: "    ")[...]
-                var trimmed = line[...]
-
-                // Look at very last character and remove it if whitespace and save it back
-                while trimmed.last?.isWhitespace == true { trimmed.removeLast() }
-                lines.append(String(trimmed))
-
-                if trimmed.count > maxLineLength { maxLineLength = trimmed.count }
-
-                // Generous limit: Ensure we have enough lines to reach the bottom
-                // of the Finder icon even if the text is zoomed out microscopically
-                if lines.count >= 500 { stop = true }
+            var page = NSColor.white.cgColor
+            var ink = NSColor.black.cgColor
+            NSAppearance(named: UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark" ? .darkAqua : .aqua)?.performAsCurrentDrawingAppearance {
+                page = (art.background ?? .textBackgroundColor).cgColor
+                ink = NSColor.textColor.cgColor
             }
 
-            // Remove all trailing blank lines at the bottom of document
-            while lines.last?.isEmpty == true { lines.removeLast() }
-            if lines.isEmpty { return false }
+            context.setFillColor(page)
+            context.fill(CGRect(origin: .zero, size: size))
 
-            // Use the file's natural width to dynamically stretch to the edges
-            let maxChars = maxLineLength
-
-            // Provide font name and size to draw sample
             let baseFont = CTFontCreateWithName(SharedCode.nfoFontName as CFString, SharedCode.nfoFontSize, nil)
-
-            // Measure one character width (M or W)
-            let sample = NSAttributedString(string: "M", attributes: [.font: baseFont])
-            let sampleLine = CTLineCreateWithAttributedString(sample)
-            let charWidth = CGFloat(CTLineGetTypographicBounds(sampleLine, nil, nil, nil))
-
-            // Scale font so the full width is used
-            let scale = drawRect.width / (CGFloat(maxChars) * charWidth)
-            let finalFontSize = SharedCode.nfoFontSize * scale
-            let ctFont = CTFontCreateWithName(SharedCode.nfoFontName as CFString, finalFontSize, nil)
+            let charWidth = SharedCode.nfoCellWidth
 
             // Compute line height (tight, no leading)
-            let ascent = CTFontGetAscent(ctFont)
-            let descent = CTFontGetDescent(ctFont)
+            let descent = CTFontGetDescent(baseFont)
+            let lineHeight = CTFontGetAscent(baseFont) + descent
+            let cell = CGRect(x: 0, y: -descent, width: charWidth, height: lineHeight)
 
-            // Empirical correction factor for DOS font vertical metrics to remove banding
-            let lineHeight = (ascent + descent) * 0.70
+            let scale = drawRect.width / (CGFloat(art.columns) * charWidth)
+            let visibleLines = min(art.lines.count, Int((drawRect.height / (lineHeight * scale)).rounded(.up)))
+            let artHeight = CGFloat(visibleLines) * lineHeight
 
-            // Compute how many lines fit vertically
-            let maxLines = Int(drawRect.height / lineHeight)
+            var backgroundPaths: [CGColor: CGMutablePath] = [:]
+            var foregroundPaths: [CGColor: CGMutablePath] = [:]
+            var glyphPaths: [Character: CGPath?] = [:]
 
-            // Prepare CoreText attributes
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: ctFont,
-                .foregroundColor: NSColor.black.cgColor
-            ]
+            for (row, line) in art.lines.prefix(visibleLines).enumerated() {
+                let baseline = artHeight - CGFloat(row + 1) * lineHeight + descent
+                var column = 0
+                for run in line {
+                    if let background = run.background {
+                        Self.path(for: background.cgColor, in: &backgroundPaths).addRect(CGRect(
+                            x: CGFloat(column) * charWidth,
+                            y: baseline - descent,
+                            width: CGFloat(run.text.count) * charWidth,
+                            height: lineHeight
+                        ))
+                    }
+                    let foreground = Self.path(for: run.foreground?.cgColor ?? ink, in: &foregroundPaths)
+                    for character in run.text {
+                        if let glyph = Self.glyphPath(for: character, font: baseFont, cell: cell, cache: &glyphPaths) {
+                            foreground.addPath(glyph, transform: CGAffineTransform(translationX: CGFloat(column) * charWidth, y: baseline))
+                        }
+                        column += 1
+                    }
+                }
+            }
 
-            // Translate context to drawing origin
             context.saveGState()
-            context.translateBy(x: drawRect.origin.x, y: drawRect.origin.y)
+            context.clip(to: drawRect)
+            context.translateBy(x: drawRect.minX, y: drawRect.maxY - artHeight * scale)
+            context.scaleBy(x: scale, y: scale)
 
-            // Draw lines top-down (truncate vertically)
-            var y = drawRect.height - lineHeight
-
-            for i in 0..<min(maxLines, lines.count) {
-
-                // Create attributed string per line
-                let attrString = NSAttributedString(string: lines[i], attributes: attributes)
-                let ctLine = CTLineCreateWithAttributedString(attrString)
-
-                // Snap Y to integer to reduce banding and blurry sub-pixel rendering
-                context.textPosition = CGPoint(x: 0, y: round(y))
-                CTLineDraw(ctLine, context)
-
-                y -= lineHeight
-                if y < 0 { break }
+            for paths in [backgroundPaths, foregroundPaths] {
+                for (color, path) in paths {
+                    context.setFillColor(color)
+                    context.addPath(path)
+                    context.fillPath()
+                }
             }
 
             // Restore context and return
@@ -162,5 +137,28 @@ class ThumbnailProvider: QLThumbnailProvider {
 
         // Return reply with the render
         handler(reply, nil)
+    }
+
+    private static func path(for color: CGColor, in paths: inout [CGColor: CGMutablePath]) -> CGMutablePath {
+        if let path = paths[color] {
+            return path
+        }
+        let path = CGMutablePath()
+        paths[color] = path
+        return path
+    }
+
+    private static func glyphPath(for character: Character, font: CTFont, cell: CGRect, cache: inout [Character: CGPath?]) -> CGPath? {
+        if let cached = cache[character] {
+            return cached
+        }
+        var units = Array(String(character).utf16)
+        var glyphs = [CGGlyph](repeating: 0, count: units.count)
+        var path = CTFontGetGlyphsForCharacters(font, &units, &glyphs, units.count) ? CTFontCreatePathForGlyph(font, glyphs[0], nil) : nil
+        if #available(macOS 13, *), let unclipped = path {
+            path = unclipped.intersection(CGPath(rect: cell, transform: nil))
+        }
+        cache[character] = .some(path)
+        return path
     }
 }

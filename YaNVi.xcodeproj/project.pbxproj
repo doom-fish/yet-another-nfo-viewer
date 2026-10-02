@@ -10,6 +10,9 @@
 		D73E2D712FD32745000CD24F /* SharedCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73E2D702FD32745000CD24F /* SharedCode.swift */; };
 		D73E2D722FD32745000CD24F /* SharedCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73E2D702FD32745000CD24F /* SharedCode.swift */; };
 		D73E2D732FD32745000CD24F /* SharedCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73E2D702FD32745000CD24F /* SharedCode.swift */; };
+		D79A11002FE10000000A0002 /* TextArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D79A11002FE10000000A0001 /* TextArt.swift */; };
+		D79A11002FE10000000A0003 /* TextArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D79A11002FE10000000A0001 /* TextArt.swift */; };
+		D79A11002FE10000000A0004 /* TextArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D79A11002FE10000000A0001 /* TextArt.swift */; };
 		D740A3142F5C40B900CD723C /* PreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D740A3132F5C40B900CD723C /* PreviewViewController.swift */; };
 		D740A31E2F5C40B900CD723C /* YaNViQuickLook.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D740A30E2F5C40B900CD723C /* YaNViQuickLook.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D740A32A2F5C4ABB00CD723C /* PreviewViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D740A3172F5C40B900CD723C /* PreviewViewController.xib */; };
@@ -77,6 +80,7 @@
 
 /* Begin PBXFileReference section */
 		D73E2D702FD32745000CD24F /* SharedCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedCode.swift; sourceTree = "<group>"; };
+		D79A11002FE10000000A0001 /* TextArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextArt.swift; sourceTree = "<group>"; };
 		D740A30E2F5C40B900CD723C /* YaNViQuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YaNViQuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D740A3102F5C40B900CD723C /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		D740A3132F5C40B900CD723C /* PreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewViewController.swift; sourceTree = "<group>"; };
@@ -187,6 +191,7 @@
 				D7FF79402F5B465300BA6F5A /* AppDelegate.swift */,
 				D7D441962F5B5A4B009A9D4A /* EscapeWindow.swift */,
 				D73E2D702FD32745000CD24F /* SharedCode.swift */,
+				D79A11002FE10000000A0001 /* TextArt.swift */,
 				D7D4418F2F5B5803009A9D4A /* MainMenu.xib */,
 				D7FF793B2F5B462C00BA6F5A /* NFO Document.icns */,
 				D7FF793C2F5B462C00BA6F5A /* NFO Viewer.icns */,
@@ -352,6 +357,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D73E2D722FD32745000CD24F /* SharedCode.swift in Sources */,
+				D79A11002FE10000000A0003 /* TextArt.swift in Sources */,
 				D740A3142F5C40B900CD723C /* PreviewViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -361,6 +367,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D73E2D732FD32745000CD24F /* SharedCode.swift in Sources */,
+				D79A11002FE10000000A0004 /* TextArt.swift in Sources */,
 				D7F247A62F9D4E7400C6BE24 /* ThumbnailProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -370,6 +377,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D73E2D712FD32745000CD24F /* SharedCode.swift in Sources */,
+				D79A11002FE10000000A0002 /* TextArt.swift in Sources */,
 				D7D441972F5B5A4B009A9D4A /* EscapeWindow.swift in Sources */,
 				D7FF79412F5B465300BA6F5A /* AppDelegate.swift in Sources */,
 			);
@@ -663,6 +671,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;

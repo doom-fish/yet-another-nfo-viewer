@@ -32,8 +32,9 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>nfo</string>
-					<string>asc</string>
 					<string>diz</string>
+					<string>ans</string>
+					<string>asci</string>
 				</array>
 			</dict>
 		</dict>

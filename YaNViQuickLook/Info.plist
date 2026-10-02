@@ -9,6 +9,7 @@
 			<key>QLSupportedContentTypes</key>
 			<array>
 				<string>com.mackonsti.scene.document</string>
+				<string>com.mackonsti.ascii-art</string>
 			</array>
 		</dict>
 		<key>NSExtensionPointIdentifier</key>
@@ -30,8 +31,24 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>nfo</string>
-					<string>asc</string>
 					<string>diz</string>
+					<string>ans</string>
+					<string>asci</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeIdentifier</key>
+			<string>com.mackonsti.ascii-art</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>asc</string>
 				</array>
 			</dict>
 		</dict>

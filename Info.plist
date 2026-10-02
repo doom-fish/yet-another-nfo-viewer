@@ -14,6 +14,8 @@
 				<string>nfo</string>
 				<string>asc</string>
 				<string>diz</string>
+				<string>ans</string>
+				<string>asci</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string>NFO Document</string>
@@ -23,6 +25,18 @@
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Plain Text Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
@@ -69,8 +83,28 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>nfo</string>
-					<string>asc</string>
 					<string>diz</string>
+					<string>ans</string>
+					<string>asci</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.mackonsti.ascii-art</string>
+			<key>UTTypeDescription</key>
+			<string>ASCII Art Document</string>
+			<key>UTTypeIconFile</key>
+			<string>NFO Document</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>asc</string>
 				</array>
 			</dict>
 		</dict>

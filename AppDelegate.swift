@@ -78,7 +78,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .showsScaling,
             .showsPreview
         ]
+        nfoTextView.appearance = NSAppearance(named: .aqua)
         operation.run()
+        nfoTextView.appearance = nil
     }
 
     // Bundled font defined in SharedCode.swift
@@ -141,7 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // under ExportedTypeDeclarations, this is the correct and safe method
         let sceneDocument = UTType(exportedAs: "com.mackonsti.scene.document")
 
-        openPanel.allowedContentTypes = [sceneDocument]
+        openPanel.allowedContentTypes = [sceneDocument, .plainText]
         openPanel.allowsMultipleSelection = false
         openPanel.canChooseFiles = true
         openPanel.resolvesAliases = true
@@ -156,7 +158,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
 
             print("No NFO file selected")
-            NSApp.terminate(self)
+            if !nfoWindow.isVisible && !nfoWindow.isMiniaturized {
+                NSApp.terminate(self)
+            }
         }
     }
 
@@ -173,8 +177,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         print("Imported \(url)")
 
-        // Read NFO file contents using CP437 encoding
-        guard let nfoInput = try? String(contentsOf: url, encoding: SharedCode.nfoEncoding()) else {
+        guard let art = try? TextArt.load(from: url) else {
             print("Unable to read file: ", url.lastPathComponent)
 
             // Display a native warning
@@ -189,15 +192,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Parse, trim and re-join into a single string for the NSTextView coming next
-        let parsed = SharedCode.nfoTrimming(text: nfoInput)
-        let nfoContents = parsed.lines.joined(separator: "\n")
+        let finalLineCount = art.lines.count
+        let longestLine = art.columns
 
-        let originalLineCount = parsed.originalLineCount
-        let finalLineCount = parsed.lines.count
-        let longestLine = parsed.maxLineLength
-
-        print("NFO count: \(originalLineCount) lines became \(finalLineCount) @ maximum \(longestLine) chars")
+        print("NFO count: \(finalLineCount) lines @ maximum \(longestLine) chars")
 
         // Safely load the DOS font to avoid crashes
         guard let nfoFont = NSFont(name: SharedCode.nfoFontName, size: SharedCode.nfoFontSize) else {
@@ -221,7 +219,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Configure text view
         nfoTextView.font = nfoFont
-        nfoTextView.string = nfoContents
+        nfoTextView.isRichText = true
+        nfoTextView.textStorage?.setAttributedString(art.attributedString(font: nfoFont))
 
         /*
          Ensure pixel-perfect ASCII rendering.
@@ -256,6 +255,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Disable wrapping (important for NFO)
         nfoTextView.isHorizontallyResizable = true
         nfoTextView.isVerticallyResizable = true
+        nfoTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
         // NFO viewer basic behaviour
         nfoTextView.isEditable = false
@@ -272,15 +272,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         nfoTextView.textContainerInset = .zero
 
         nfoTextView.drawsBackground = true
-        nfoTextView.backgroundColor = .white
-        nfoTextView.textColor = .black
+        nfoTextView.backgroundColor = art.background ?? .textBackgroundColor
+
+        nfoWindow.title = url.lastPathComponent
 
         // Calculate window size required for the ASCII art
         sizeForWindowDrawing(longestLine: longestLine, numberOfLines: finalLineCount, font: nfoFont)
 
         // Window configuration
         // if !nfoWindow.isVisible { nfoWindow.center() }
-        nfoWindow.title = url.lastPathComponent
         nfoWindow.showsResizeIndicator = false
         nfoWindow.isMovableByWindowBackground = true
 
@@ -320,14 +320,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Monospaced glyph width
-        let glyphWidth = ceil("M".size(withAttributes: [.font: font]).width)
+        let glyphWidth = SharedCode.nfoCellWidth
 
         let textWidth = CGFloat(longestLine) * glyphWidth
         let textHeight = CGFloat(numberOfLines) * lineHeight
 
         print("View metrics: \(textWidth) x \(textHeight) pixels")
 
-        var windowWidth = textWidth
+        var windowWidth = max(textWidth, NSWindow.minFrameWidth(withTitle: nfoWindow.title, styleMask: nfoWindow.styleMask))
         var windowHeight = textHeight
 
         // Detect vertical scrollbar and add padding
@@ -375,6 +375,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("Application will finish launching")
         hasDroppedFile = false
         SharedCode.registerFonts()
+        nfoTextView.textContainer?.replaceLayoutManager(TextArtLayoutManager())
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

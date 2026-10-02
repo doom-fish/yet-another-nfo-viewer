@@ -11,6 +11,8 @@ struct SharedCode {
     static let nfoFontName: String = "MorePerfectDOSVGA"
     static let nfoFontSize: CGFloat = 16
     static let nfoMargin: CGFloat = 20
+    static let nfoCellWidth: CGFloat = 8
+    static let nfoTabWidth = 8
 
     // --------------------------------------------------------------------
     // FUNCTION 1: - Font Registration
@@ -102,18 +104,16 @@ struct SharedCode {
      horizontal whitespace trimming actually occurred.
      */
 
-    static func nfoTrimming(text: String) -> (lines: [String], maxLineLength: Int, originalLineCount: Int, didTrimWhitespace: Bool) {
+    static func nfoTrimming(text: String, maximumLines: Int = .max) -> (lines: [String], maxLineLength: Int, originalLineCount: Int, didTrimWhitespace: Bool) {
 
         var lines = [String]()
         var longestLine = 0
         var didTrimWhitespace = false
 
         // Single-pass enumeration to normalize line endings and trim spaces (no Regex overhead)
-        text.enumerateLines { line, _ in
+        text.enumerateLines { line, stop in
 
-            // Natively replace all tabs with 4 spaces before trimming
-            // var trimmed = line.replacingOccurrences(of: "\t", with: "    ")[...]
-            var trimmed = line[...]
+            var trimmed = expandTabs(line)
 
             // Look at very last character and remove it if whitespace and save it back
             while trimmed.last?.isWhitespace == true {
@@ -123,6 +123,7 @@ struct SharedCode {
 
             lines.append(String(trimmed))
             if trimmed.count > longestLine { longestLine = trimmed.count }
+            if lines.count >= maximumLines { stop = true }
         }
 
         // Remember the original number of lines before any trimming at the bottom
@@ -134,5 +135,23 @@ struct SharedCode {
 
         // Return all four pieces of data
         return (lines, longestLine, originalLineCount, didTrimWhitespace)
+    }
+
+    static func expandTabs(_ line: String) -> Substring {
+        guard line.contains("\t") else { return line[...] }
+
+        var expanded = ""
+        var column = 0
+        for character in line {
+            if character == "\t" {
+                let spaces = nfoTabWidth - column % nfoTabWidth
+                expanded += String(repeating: " ", count: spaces)
+                column += spaces
+            } else {
+                expanded.append(character)
+                column += 1
+            }
+        }
+        return expanded[...]
     }
 }

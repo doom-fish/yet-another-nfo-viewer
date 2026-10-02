@@ -22,10 +22,12 @@ class PreviewViewController: NSViewController, QLPreviewingController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        textView.textContainer?.replaceLayoutManager(TextArtLayoutManager())
+
         // Set the view properties
         textView.isEditable = false
         textView.isSelectable = false
-        textView.isRichText = false
+        textView.isRichText = true
 
         textView.usesFontPanel = false
         textView.usesFindBar = false
@@ -33,6 +35,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
 
         textView.isHorizontallyResizable = true
         textView.isVerticallyResizable = true
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
         textView.textContainer?.lineBreakMode = .byClipping
         textView.textContainer?.lineFragmentPadding = 0
@@ -40,8 +43,8 @@ class PreviewViewController: NSViewController, QLPreviewingController {
         textView.textContainer?.heightTracksTextView = false
 
         textView.drawsBackground = true
-        textView.backgroundColor = .white
-        textView.textColor = .black
+        textView.backgroundColor = .textBackgroundColor
+        textView.textColor = .textColor
 
         textView.layoutManager?.usesFontLeading = false
         textView.layoutManager?.allowsNonContiguousLayout = true
@@ -76,19 +79,11 @@ class PreviewViewController: NSViewController, QLPreviewingController {
             }
         }
 
-        // Read NFO file contents using CP437 encoding
-        let encoding = SharedCode.nfoEncoding()
-        let nfoInput = try String(contentsOf: url, encoding: encoding)
+        let art = try TextArt.load(from: url)
+        let finalLineCount = art.lines.count
+        let longestLine = art.columns
 
-        // Parse, trim and re-join into a single string for the NSTextView coming next
-        let parsed = SharedCode.nfoTrimming(text: nfoInput)
-        let nfoContents = parsed.lines.joined(separator: "\n")
-
-        let originalLineCount = parsed.originalLineCount
-        let finalLineCount = parsed.lines.count
-        let longestLine = parsed.maxLineLength
-
-        print("NFO count: \(originalLineCount) lines became \(finalLineCount) @ maxumum \(longestLine) chars" )
+        print("NFO count: \(finalLineCount) lines @ maximum \(longestLine) chars")
 
         await MainActor.run {
 
@@ -101,7 +96,8 @@ class PreviewViewController: NSViewController, QLPreviewingController {
 
             // Configure text view
             textView.font = nfoFont
-            textView.string = nfoContents
+            textView.textStorage?.setAttributedString(art.attributedString(font: nfoFont))
+            textView.backgroundColor = art.background ?? .textBackgroundColor
 
             // Find true line height used by AppKit
             let lineHeight: CGFloat
@@ -113,7 +109,7 @@ class PreviewViewController: NSViewController, QLPreviewingController {
             }
 
             // Monospaced glyph width
-            let glyphWidth = ceil("M".size(withAttributes: [.font: nfoFont]).width)
+            let glyphWidth = SharedCode.nfoCellWidth
 
             // Calculate ASCII art size
             let textWidth = CGFloat(longestLine) * glyphWidth
@@ -132,8 +128,6 @@ class PreviewViewController: NSViewController, QLPreviewingController {
                 width: textWidth + SharedCode.nfoMargin,
                 height: textHeight
             )
-
-            print("Unicode characters count: file \(nfoContents.count) ≠ view: \(textView.string.count)")
         }
     }
 }
